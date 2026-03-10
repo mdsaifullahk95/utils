@@ -7,7 +7,7 @@ import re
 
 # --- CONFIGURATION ---
 # Replace with your free key from https://aistudio.google.com/
-API_KEY = "AIzaSyCYQr3qfMCe1scDXY3uf4jfZV9wVrlvSWw"
+API_KEY = "API KEY HERE"
 client = genai.Client(api_key=API_KEY)
 
 class LingoApp:
