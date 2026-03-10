@@ -45,11 +45,15 @@ class DeTalks:
         ttk.Button(self.key_window, text="Unlock App", command=self.verify_key).pack(pady=20)
 
     def verify_key(self):
-        key = self.key_entry.get().strip()
-        if not key: return
+        # .strip() only removes spaces; we need to encode/decode to kill hidden BOMs
+        raw_key = self.key_entry.get().strip()
+        if not raw_key: return
+        
         try:
-            # We initialize the client. We'll catch errors during the first message.
-            self.client = Mistral(api_key=key)
+            # This line removes hidden characters like \ufeff
+            clean_key = raw_key.encode("ascii", "ignore").decode("ascii")
+            
+            self.client = Mistral(api_key=clean_key)
             self.key_window.destroy()
         except Exception as e:
             messagebox.showerror("Setup Error", f"Could not initialize: {e}")
