@@ -33,8 +33,9 @@ class CoverLetterApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Cover Letter Architect Pro")
-        self.root.geometry("850x950")
+        self.root.geometry("900x980")
         self.root.configure(bg="#f4f7f9")
+        
         self.cv_text = ""
         self.api_key = None
         self.ask_for_key()
@@ -60,42 +61,66 @@ class CoverLetterApp:
         main = tk.Frame(self.root, bg="#f4f7f9", padx=30, pady=20)
         main.pack(expand=True, fill="both")
         
-        tk.Label(main, text="Professional Cover Letter Designer", font=("Helvetica", 20, "bold"), bg="#f4f7f9").pack(pady=10)
+        # --- HEADER ---
+        header_f = tk.Frame(main, bg="#f4f7f9")
+        header_f.pack(fill="x")
+        tk.Label(header_f, text="AI Cover Letter Designer", font=("Helvetica", 20, "bold"), bg="#f4f7f9").pack(side="left")
+        
+        # RESET BUTTON (Persistent salary/name)
+        tk.Button(header_f, text="🔄 RESET PROCESS", command=self.reset_ui, bg="#e74c3c", fg="white", font=("Arial", 9, "bold"), relief="flat", padx=10).pack(side="right")
 
-        # 1. Profile Upload
+        # --- STEP 1: UPLOAD ---
         self.upload_btn = tk.Button(main, text="1. Upload Profile (PDF)", command=self.upload_cv, bg="#bdc3c7", relief="flat", font=("Arial", 10, "bold"))
-        self.upload_btn.pack(fill="x", pady=5)
+        self.upload_btn.pack(fill="x", pady=(15, 5))
         self.cv_label = tk.Label(main, text="No profile loaded", fg="gray", bg="#f4f7f9")
         self.cv_label.pack()
 
-        # 2. JD Input
+        # --- STEP 2: JD ---
         tk.Label(main, text="2. Paste Job Description:", bg="#f4f7f9", font=("Arial", 10, "bold")).pack(anchor="w", pady=(10,0))
-        self.jd_text = tk.Text(main, height=8, font=("Arial", 10), padx=10, pady=10, relief="flat")
+        self.jd_text = tk.Text(main, height=7, font=("Arial", 10), padx=10, pady=10, relief="flat")
         self.jd_text.pack(fill="x", pady=5)
 
-        # 3. Settings
-        ctrls = tk.Frame(main, bg="#f4f7f9")
-        ctrls.pack(fill="x", pady=10)
-        tk.Label(ctrls, text="Salary:", bg="#f4f7f9").pack(side="left")
-        self.salary_entry = ttk.Entry(ctrls, width=15)
-        self.salary_entry.pack(side="left", padx=10)
-        tk.Label(ctrls, text="Language:", bg="#f4f7f9").pack(side="left", padx=(10,0))
+        # --- STEP 3: PERSISTENT SETTINGS ---
+        settings_frame = tk.LabelFrame(main, text=" Settings (Persisted) ", bg="#f4f7f9", font=("Arial", 9, "bold"), padx=10, pady=10)
+        settings_frame.pack(fill="x", pady=10)
+        
+        tk.Label(settings_frame, text="Salary:", bg="#f4f7f9").grid(row=0, column=0, sticky="w")
+        self.salary_entry = ttk.Entry(settings_frame, width=15)
+        self.salary_entry.grid(row=0, column=1, padx=10, sticky="w")
+
+        tk.Label(settings_frame, text="Language:", bg="#f4f7f9").grid(row=0, column=2, sticky="w")
         self.lang_var = tk.StringVar(value="English")
-        self.lang_combo = ttk.Combobox(ctrls, textvariable=self.lang_var, values=["English", "German"], state="readonly", width=10)
-        self.lang_combo.pack(side="left", padx=10)
+        self.lang_combo = ttk.Combobox(settings_frame, textvariable=self.lang_var, values=["English", "German"], state="readonly", width=10)
+        self.lang_combo.grid(row=0, column=3, padx=10, sticky="w")
 
-        # 4. Generate
+        self.use_template_var = tk.BooleanVar(value=True)
+        self.template_cb = tk.Checkbutton(settings_frame, text="Use Naming Template", variable=self.use_template_var, bg="#f4f7f9")
+        self.template_cb.grid(row=1, column=0, columnspan=2, pady=(10,0), sticky="w")
+        
+        tk.Label(settings_frame, text="Last Name:", bg="#f4f7f9").grid(row=1, column=2, pady=(10,0), sticky="w")
+        self.last_name_entry = ttk.Entry(settings_frame, width=15)
+        self.last_name_entry.grid(row=1, column=3, padx=10, pady=(10,0), sticky="w")
+
+        # --- STEP 4: GENERATE ---
         self.gen_btn = tk.Button(main, text="GENERATE PREVIEW", command=self.generate_letter, bg="#27ae60", fg="white", font=("Arial", 12, "bold"), pady=8, relief="flat")
-        self.gen_btn.pack(fill="x", pady=10)
+        self.gen_btn.pack(fill="x", pady=15)
 
-        # 5. Result/Preview
+        # --- STEP 5: PREVIEW ---
         tk.Label(main, text="Review & Final Edits:", bg="#f4f7f9", font=("Arial", 10, "bold")).pack(anchor="w")
-        self.output_text = tk.Text(main, height=18, font=("Times New Roman", 12), padx=40, pady=40, wrap="word", relief="flat")
+        self.output_text = tk.Text(main, height=15, font=("Times New Roman", 12), padx=40, pady=40, wrap="word", relief="flat")
         self.output_text.pack(fill="both", expand=True, pady=5)
 
-        # 6. Export
+        # --- STEP 6: EXPORT ---
         self.export_btn = tk.Button(main, text="💾 EXPORT ONE-PAGE PDF", command=self.export_to_pdf, bg="#2980b9", fg="white", font=("Arial", 12, "bold"), pady=10, relief="flat")
         self.export_btn.pack(fill="x", pady=10)
+
+    def reset_ui(self):
+        """Resets inputs but preserves salary and name settings."""
+        self.cv_text = ""
+        self.cv_label.config(text="No profile loaded", fg="gray")
+        self.jd_text.delete("1.0", tk.END)
+        self.output_text.delete("1.0", tk.END)
+        messagebox.showinfo("Reset", "Profile and Job Description cleared. Settings preserved.")
 
     def upload_cv(self):
         path = filedialog.askopenfilename(filetypes=[("PDF", "*.pdf")])
@@ -120,13 +145,12 @@ class CoverLetterApp:
             Data: {self.cv_text}
             Job: {jd}
             {sal_p}
-            RULES: No bolding, no placeholders, no (m/w/d), no 'Notes' section. Body ~1600 characters. 
-            Format: Start with My Name, Address, Phone, Email. Then 'Hiring Manager'. Then Subject. Then Salutation."""
+            RULES: No bolding, no placeholders, no (m/w/d), no 'Notes' section. Body ~1600 chars. 
+            Strict Format: Full Name, Address, Phone, Email on separate lines. Then 'Hiring Manager'. Then Subject. Then Salutation."""
             
             response = client.chat.complete(model="mistral-large-latest", messages=[{"role": "user", "content": prompt}])
             text = response.choices[0].message.content
             
-            # Cleaning logic
             text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
             text = re.sub(r'\[.*?\]', '', text)
             lines = text.split('\n')
@@ -148,35 +172,42 @@ class CoverLetterApp:
     def export_to_pdf(self):
         text_content = self.output_text.get("1.0", tk.END).strip()
         if not text_content: return
-        file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF", "*.pdf")])
+
+        # Dynamic Filename logic
+        initial_file = ""
+        if self.use_template_var.get():
+            last_name = self.last_name_entry.get().strip()
+            if last_name:
+                prefix = "Anschreiben_" if self.lang_var.get() == "German" else "Cover_Letter_"
+                initial_file = f"{prefix}{last_name}"
+
+        file_path = filedialog.asksaveasfilename(defaultextension=".pdf", initialfile=initial_file, filetypes=[("PDF", "*.pdf")])
         if not file_path: return
 
         try:
             doc = SimpleDocTemplate(file_path, pagesize=A4, rightMargin=0.75*inch, leftMargin=0.75*inch, topMargin=0.5*inch, bottomMargin=0.5*inch)
             styles = getSampleStyleSheet()
             
-            # Dynamic Font Size logic
             content_len = len(text_content)
             base_size = 11 if content_len < 2200 else 10
             
-            # Styles
-            name_style = ParagraphStyle('Name', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=16, leading=20, alignment=TA_CENTER, spaceAfter=2)
-            contact_style = ParagraphStyle('Contact', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=11, alignment=TA_CENTER, textColor=colors.grey)
-            body_style = ParagraphStyle('Body', parent=styles['Normal'], fontName='Times-Roman', fontSize=base_size, leading=base_size+3, alignment=TA_JUSTIFY, spaceAfter=10)
-            subject_style = ParagraphStyle('Subject', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=base_size+1, leading=base_size+5, spaceBefore=15, spaceAfter=15)
-            hiring_style = ParagraphStyle('Hiring', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=base_size, leading=base_size+3, spaceBefore=10)
+            # FIXED: Added leading (vertical space) to styles to prevent overlap
+            name_style = ParagraphStyle('Name', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=16, leading=22, alignment=TA_CENTER, spaceAfter=4)
+            contact_style = ParagraphStyle('Contact', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=12, alignment=TA_CENTER, textColor=colors.grey)
+            body_style = ParagraphStyle('Body', parent=styles['Normal'], fontName='Times-Roman', fontSize=base_size, leading=base_size+4, alignment=TA_JUSTIFY, spaceAfter=10)
+            subject_style = ParagraphStyle('Subject', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=base_size+1, leading=base_size+6, spaceBefore=15, spaceAfter=15)
+            hiring_style = ParagraphStyle('Hiring', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=base_size, leading=base_size+4, spaceBefore=12)
 
             story = []
             lines = text_content.split('\n')
             
-            # Modern Header
-            story.append(Paragraph(lines[0], name_style)) # Your Name
+            # Header
+            story.append(Paragraph(lines[0], name_style))
             contact_info = " | ".join([l.strip() for l in lines[1:5] if l.strip()])
             story.append(Paragraph(contact_info, contact_style))
-            story.append(Spacer(1, 10))
-            story.append(HRFlowable(width="100%", thickness=1, color=colors.black, spaceBefore=2, spaceAfter=10))
+            story.append(Spacer(1, 12)) # Gap before the line
+            story.append(HRFlowable(width="100%", thickness=1, color=colors.black, spaceAfter=12))
 
-            # Remaining Content
             for i, para in enumerate(lines[5:]):
                 para = para.strip()
                 if not para: continue
@@ -185,13 +216,11 @@ class CoverLetterApp:
                     story.append(Paragraph(para, hiring_style))
                 elif any(s in para for s in ["Subject:", "Betreff:", "Application for"]):
                     story.append(Paragraph(para, subject_style))
-                elif any(s in para for s in ["Dear", "Sehr geehrte", "Yours", "Best regards", "Sincerely"]):
-                    story.append(Paragraph(para, body_style))
                 else:
                     story.append(Paragraph(para, body_style))
 
             doc.build(story)
-            messagebox.showinfo("Success", f"Professional One-Page PDF Created! (Font: {base_size}pt)")
+            messagebox.showinfo("Success", f"PDF Saved: {os.path.basename(file_path)}")
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
